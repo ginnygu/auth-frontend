@@ -1,5 +1,8 @@
 import React, { Component } from "react";
+
 import { isAlpha, isEmail, isAlphanumeric, isStrongPassword } from "validator";
+import { toast } from "react-toastify";
+import Axios from "../utils/Axios";
 import "./Signup.css";
 
 export class Signup extends Component {
@@ -16,8 +19,13 @@ export class Signup extends Component {
     emailError: "",
     passwordError: "",
     confirmPasswordError: "",
-    onConfirmPasswordFocus: false,
     isButtonDisabled: true,
+    firstNameOnFocus: false,
+    lastNameOnFocus: false,
+    emailOnFocus: false,
+    usernameOnFocus: false,
+    passwordOnFocus: false,
+    confirmPasswordOnFocus: false,
   };
 
   handleOnChange = (event) => {
@@ -55,6 +63,7 @@ export class Signup extends Component {
     if (this.state.password !== this.state.confirmPassword) {
       this.setState({
         confirmPasswordError: "Password does not match!",
+        isButtonDisabled: true,
       });
     } else {
       this.setState({
@@ -64,10 +73,11 @@ export class Signup extends Component {
   };
 
   handlePasswordInput = () => {
-    if (this.state.onConfirmPasswordFocus) {
+    if (this.state.confirmPasswordOnFocus) {
       if (this.state.password !== this.state.confirmPassword) {
         this.setState({
           confirmPasswordError: "Password does not match",
+          isButtonDisabled: true,
         });
       } else {
         this.setState({
@@ -79,6 +89,7 @@ export class Signup extends Component {
     if (this.state.password.length === 0) {
       this.setState({
         passwordError: "Password cannot be empty",
+        isButtonDisabled: true,
       });
     } else {
       if (isStrongPassword(this.state.password)) {
@@ -89,6 +100,7 @@ export class Signup extends Component {
         this.setState({
           passwordError:
             "Password must contains 1 uppercase, 1 lowercase, 1 special character, 1 number and minimul of 8 charactors long",
+          isButtonDisabled: true,
         });
       }
     }
@@ -98,6 +110,7 @@ export class Signup extends Component {
     if (this.state.email.length === 0) {
       this.setState({
         emailError: "Email cannot be empty",
+        isButtonDisabled: true,
       });
     } else {
       if (isEmail(this.state.email)) {
@@ -107,6 +120,7 @@ export class Signup extends Component {
       } else {
         this.setState({
           emailError: "Please, enter a valid email!",
+          isButtonDisabled: true,
         });
       }
     }
@@ -121,11 +135,13 @@ export class Signup extends Component {
       } else {
         this.setState({
           [`${event.target.name}Error`]: `${event.target.placeholder} can only have alphabet`,
+          isButtonDisabled: true,
         });
       }
     } else {
       this.setState({
         [`${event.target.name}Error`]: `${event.target.placeholder} cannot be empty`,
+        isButtonDisabled: true,
       });
     }
   };
@@ -134,6 +150,7 @@ export class Signup extends Component {
     if (this.state.username.length === 0) {
       this.setState({
         usernameError: "Username cannot be empty",
+        isButtonDisabled: true,
       });
     } else {
       if (isAlphanumeric(this.state.username)) {
@@ -143,20 +160,34 @@ export class Signup extends Component {
       } else {
         this.setState({
           usernameError: "Username can only have alphabet and number",
+          isButtonDisabled: true,
         });
       }
     }
   };
 
-  handleOnSubmit = (event) => {
+  handleOnSubmit = async (event) => {
     event.preventDefault();
 
-    console.log(this.state);
+    try {
+      let userInputObj = {
+        firstName: this.state.firstName,
+        lastName: this.state.lastName,
+        email: this.state.email,
+        username: this.state.username,
+        password: this.state.password,
+      };
+      let success = await Axios.post("/api/user/sign-up", userInputObj);
+      console.log(success);
+      toast.success(`${success.data.message}`);
+    } catch (e) {
+      toast.error(`${e.response.data.message}`);
+    }
   };
 
   handleOnBlur = (event) => {
-    console.log(event.target.name);
-    console.log("handle onBlur Triggered");
+    // console.log(event.target.name);
+    // console.log("handle onBlur Triggered");
 
     if (this.state[event.target.name].length === 0) {
       this.setState({
@@ -165,10 +196,37 @@ export class Signup extends Component {
     }
   };
 
-  handleConfirmPasswordOnFocus = () => {
-    if (!this.state.onConfirmPasswordFocus) {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.isButtonDisabled === true) {
+      if (
+        this.state.firstNameOnFocus &&
+        this.state.lastNameOnFocus &&
+        this.state.emailOnFocus &&
+        this.state.usernameOnFocus &&
+        this.state.passwordOnFocus &&
+        this.state.confirmPasswordOnFocus
+      ) {
+        if (
+          this.state.firstNameError.length === 0 &&
+          this.state.lastNameError.length === 0 &&
+          this.state.usernameError.length === 0 &&
+          this.state.emailError.length === 0 &&
+          this.state.passwordError.length === 0 &&
+          this.state.confirmPasswordError.length === 0 &&
+          this.state.password === this.state.confirmPassword
+        ) {
+          this.setState({
+            isButtonDisabled: false,
+          });
+        }
+      }
+    }
+  }
+
+  handleInputOnFocus = (event) => {
+    if (!this.state[`${event.target.name}OnFocus`]) {
       this.setState({
-        onConfirmPasswordFocus: true,
+        [`${event.target.name}OnFocus`]: true,
       });
     }
   };
@@ -207,6 +265,7 @@ export class Signup extends Component {
                   onChange={this.handleOnChange}
                   autoFocus
                   onBlur={this.handleOnBlur}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">
                   {firstNameError && firstNameError}
@@ -223,6 +282,7 @@ export class Signup extends Component {
                   name="lastName"
                   onChange={this.handleOnChange}
                   onBlur={this.handleOnBlur}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">
                   {lastNameError && lastNameError}
@@ -241,6 +301,7 @@ export class Signup extends Component {
                   onChange={this.handleOnChange}
                   name="email"
                   onBlur={this.handleOnBlur}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">{emailError && emailError}</div>
               </div>
@@ -257,6 +318,7 @@ export class Signup extends Component {
                   onChange={this.handleOnChange}
                   name="username"
                   onBlur={this.handleOnBlur}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">
                   {usernameError && usernameError}
@@ -275,6 +337,7 @@ export class Signup extends Component {
                   onChange={this.handleOnChange}
                   name="password"
                   onBlur={this.handleOnBlur}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">
                   {passwordError && passwordError}
@@ -293,7 +356,7 @@ export class Signup extends Component {
                   onChange={this.handleOnChange}
                   name="confirmPassword"
                   onBlur={this.handleOnBlur}
-                  onFocus={this.handleConfirmPasswordOnFocus}
+                  onFocus={this.handleInputOnFocus}
                 />
                 <div className="errorMessage">
                   {confirmPasswordError && confirmPasswordError}
