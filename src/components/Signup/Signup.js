@@ -197,6 +197,8 @@ export class Signup extends Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
+    console.log(prevState.isButtonDisabled);
+
     if (prevState.isButtonDisabled === true) {
       if (
         this.state.firstNameOnFocus &&
