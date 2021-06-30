@@ -1,8 +1,9 @@
 import React, { Component } from "react";
-
+import jwtDecode from "jwt-decode";
 import { isAlpha, isEmail, isAlphanumeric, isStrongPassword } from "validator";
 import { toast } from "react-toastify";
 import Axios from "../utils/Axios";
+import checkIfUserIsAuth from "../utils/checkIfUserIsAuth";
 import "./Signup.css";
 
 export class Signup extends Component {
@@ -27,6 +28,14 @@ export class Signup extends Component {
     passwordOnFocus: false,
     confirmPasswordOnFocus: false,
   };
+
+  componentDidMount() {
+    let isAuth = checkIfUserIsAuth();
+
+    if (isAuth) {
+      this.props.history.push("/movie");
+    }
+  }
 
   handleOnChange = (event) => {
     this.setState(
@@ -248,6 +257,8 @@ export class Signup extends Component {
       passwordError,
       confirmPasswordError,
     } = this.state;
+
+    console.log(this.props);
 
     return (
       <div className="container">

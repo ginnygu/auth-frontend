@@ -1,7 +1,10 @@
 import React, { Component } from "react";
 import { isEmpty, isEmail } from "validator";
+import jwtDecode from "jwt-decode";
+
 import { toast } from "react-toastify";
 import Axios from "../utils/Axios";
+import checkIfUserIsAuth from "../utils/checkIfUserIsAuth";
 
 import "./Login.css";
 export class Login extends Component {
@@ -14,6 +17,14 @@ export class Login extends Component {
     passwordOnFocus: false,
     canSubmit: true,
   };
+
+  componentDidMount() {
+    let isAuth = checkIfUserIsAuth();
+
+    if (isAuth) {
+      this.props.history.push("/movie");
+    }
+  }
 
   handleOnChange = (event) => {
     this.setState(
@@ -28,16 +39,9 @@ export class Login extends Component {
               canSubmit: true,
             });
           } else {
-            if (isEmail(this.state.email)) {
-              this.setState({
-                emailError: "",
-              });
-            } else {
-              this.setState({
-                emailError: "Please enter a valid email",
-                canSubmit: true,
-              });
-            }
+            this.setState({
+              emailError: "",
+            });
           }
         }
 
@@ -95,9 +99,16 @@ export class Login extends Component {
 
       let jwtToken = result.data.payload;
 
-      window.localStorage.setItem("jwtToken", jwtToken);
+      console.log(jwtToken);
+      let decodedToken = jwtDecode(jwtToken);
+      console.log(decodedToken);
 
+      this.props.handleUserLogin(decodedToken);
+
+      window.localStorage.setItem("jwtToken", jwtToken);
       toast.success("Login success!");
+
+      this.props.history.push("/movie");
     } catch (e) {
       if (e.response.status === 429) {
         toast.error(e.response.data);
@@ -111,9 +122,11 @@ export class Login extends Component {
     const { email, emailError, password, passwordError, canSubmit } =
       this.state;
 
+    //console.log(this.props);
+
     return (
       <div className="container">
-        <div className="form-text">Sign up</div>
+        <div className="form-text">Login</div>
 
         <div className="form-div">
           <form className="form" onSubmit={this.handleOnSubmit}>
@@ -121,7 +134,7 @@ export class Login extends Component {
               <div className="block-container">
                 <label htmlFor="email">Email</label>
                 <input
-                  type="text"
+                  type="email"
                   id="email"
                   placeholder="Email"
                   name="email"
